@@ -916,7 +916,7 @@ func ensurePathExists(pd *container, path string, options *ApplyOptions) error {
 
 func validateOperation(op Operation) error {
 	switch op.Kind() {
-	case "add", "replace":
+	case "add", "replace", "incr":
 		if _, err := op.ValueInterface(); err != nil {
 			return errors.Wrapf(err, "failed to decode 'value'")
 		}
@@ -970,6 +970,59 @@ func (p Patch) remove(doc *container, op Operation, options *ApplyOptions) error
 	if err != nil {
 		return errors.Wrapf(err, "error in remove for path: '%s'", path)
 	}
+
+	return nil
+}
+
+func (p Patch) incr(doc *container, op Operation, options *ApplyOptions) error {
+	path, err := op.Path()
+	if err != nil {
+		return errors.Wrapf(err, "incr operation failed to decode path")
+	}
+
+	con, key := findObject(doc, path, options)
+
+	if con == nil {
+		return errors.Wrapf(ErrMissing, "incr operation does not apply: doc is missing path: \"%s\"", path)
+	}
+
+	val, err := con.get(key, options)
+	if err != nil {
+		val = newLazyNode(newRawMessage([]byte{'0'}))
+		err = con.add(key, val, options)
+		if err != nil {
+			return errors.Wrapf(err, "error in incr for path: '%s'", path)
+		}
+	}
+
+	if val.isNull() {
+		return errors.Wrapf(ErrInvalid, "incr operation does not apply: path is null")
+	}
+
+	var i float64
+
+	err = unmarshal(*val.raw, &i)
+	if err != nil {
+		return errors.Wrapf(err, "error in incr for path: '%s'", path)
+	}
+
+	inc, err := op.ValueInterface()
+	if err != nil {
+		return errors.Wrapf(err, "error in incr for path: '%s'", path)
+	}
+
+	switch inc := inc.(type) {
+	case json.Number:
+		f, err := inc.Float64()
+		if err != nil {
+			return errors.Wrapf(err, "incr value must be number")
+		}
+		i += f
+	default:
+		return errors.Wrapf(ErrInvalid, "incr value must be number")
+	}
+
+	*val.raw = []byte(strconv.FormatFloat(i, 'f', -1, 64))
 
 	return nil
 }
@@ -1260,6 +1313,8 @@ func (p Patch) ApplyIndentWithOptions(doc []byte, indent string, options *ApplyO
 			err = p.remove(&pd, op, options)
 		case "replace":
 			err = p.replace(&pd, op, options)
+		case "incr":
+			err = p.incr(&pd, op, options)
 		case "move":
 			err = p.move(&pd, op, options)
 		case "test":

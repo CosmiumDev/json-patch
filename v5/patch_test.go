@@ -613,6 +613,28 @@ var Cases = []Case{
 		false,
 		false,
 	},
+	// incr operator
+	{
+		`{"foo": 1}`,
+		`[{"op": "incr", "path": "/foo", "value": 2}]`,
+		`{"foo": 3}`,
+		false,
+		false,
+	},
+	{
+		`{"foo": 10.5}`,
+		`[{"op": "incr", "path": "/foo", "value": -2}]`,
+		`{"foo": 8.5}`,
+		false,
+		false,
+	},
+	{
+		`{}`,
+		`[{"op": "incr", "path": "/foo", "value": -2}]`,
+		`{"foo": -2}`,
+		false,
+		false,
+	},
 }
 
 type BadCase struct {
