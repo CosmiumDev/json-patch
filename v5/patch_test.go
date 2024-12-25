@@ -635,6 +635,28 @@ var Cases = []Case{
 		false,
 		false,
 	},
+	// set operator
+	{
+		`{"foo": ["bar", "baz"]}`,
+		`[{"op": "set", "path": "/foo/1", "value": "bum"}]`,
+		`{"foo": ["bar", "bum"]}`,
+		false,
+		false,
+	},
+	{
+		`{"foo": [{},{"bar": "baz"}]}`,
+		`[{"op": "set", "path": "/foo/1/bar", "value": "bum"}]`,
+		`{"foo": [{},{"bar": "bum"}]}`,
+		false,
+		false,
+	},
+	{
+		`{}`,
+		`[{"op": "set", "path": "/foo", "value": "bar"}]`,
+		`{"foo": "bar"}`,
+		false,
+		false,
+	},
 }
 
 type BadCase struct {

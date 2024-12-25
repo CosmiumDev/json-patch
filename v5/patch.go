@@ -916,7 +916,7 @@ func ensurePathExists(pd *container, path string, options *ApplyOptions) error {
 
 func validateOperation(op Operation) error {
 	switch op.Kind() {
-	case "add", "replace", "incr":
+	case "add", "replace", "incr", "set":
 		if _, err := op.ValueInterface(); err != nil {
 			return errors.Wrapf(err, "failed to decode 'value'")
 		}
@@ -969,6 +969,32 @@ func (p Patch) remove(doc *container, op Operation, options *ApplyOptions) error
 	err = con.remove(key, options)
 	if err != nil {
 		return errors.Wrapf(err, "error in remove for path: '%s'", path)
+	}
+
+	return nil
+}
+
+func (p Patch) set(doc *container, op Operation, options *ApplyOptions) error {
+	path, err := op.Path()
+	if err != nil {
+		return errors.Wrapf(ErrMissing, "set operation failed to decode path")
+	}
+
+	con, key := findObject(doc, path, options)
+
+	if con == nil {
+		return errors.Wrapf(ErrMissing, "set operation does not apply: doc is missing path: \"%s\"", path)
+	}
+
+	val := op.value()
+
+	if val.isNull() {
+		return errors.Wrapf(ErrInvalid, "set operation does not apply: path is null")
+	}
+
+	err = con.set(key, val, options)
+	if err != nil {
+		return errors.Wrapf(err, "error in set for path: '%s'", path)
 	}
 
 	return nil
@@ -1315,6 +1341,8 @@ func (p Patch) ApplyIndentWithOptions(doc []byte, indent string, options *ApplyO
 			err = p.replace(&pd, op, options)
 		case "incr":
 			err = p.incr(&pd, op, options)
+		case "set":
+			err = p.set(&pd, op, options)
 		case "move":
 			err = p.move(&pd, op, options)
 		case "test":
