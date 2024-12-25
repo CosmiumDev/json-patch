@@ -7,7 +7,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/evanphx/json-patch/v5/internal/json"
+	"github.com/pikami/json-patch/v5/internal/json"
 	"github.com/pkg/errors"
 )
 
