@@ -7,7 +7,7 @@ import (
 	"io"
 	"reflect"
 
-	"github.com/pikami/json-patch/v5/internal/json"
+	"github.com/cosmiumdev/json-patch/v5/internal/json"
 )
 
 func merge(cur, patch *lazyNode, mergeMerge bool, options *ApplyOptions) *lazyNode {

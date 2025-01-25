@@ -1,4 +1,4 @@
-module github.com/pikami/json-patch/v5
+module github.com/cosmiumdev/json-patch/v5
 
 go 1.18
 
